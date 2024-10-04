@@ -18,7 +18,6 @@ class Clap(nn.Module):
         print(f"Language encoder has {sum([np.prod(p.size()) for p in self.language_encoder.parameters()])/1_000_000:.1f} M parameters\n")
 
         self.language_encoder.text_model.eos_token_id = language_encoder.eos_token_id
-        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
     def forward(self, 
                 action_tokens, 
@@ -26,20 +25,11 @@ class Clap(nn.Module):
                 action_pad_attention_mask,
                 language_pad_attention_mask
                ):
+        
         trajectory_embedding = self.action_encoder(action_tokens, action_pad_attention_mask)
         language_embedding = self.language_encoder(language_tokens, attention_mask=language_pad_attention_mask).text_embeds
 
-        # normalized features
-        trajectory_features = trajectory_embedding / trajectory_embedding.norm(dim=1, keepdim=True)
-        language_features = language_embedding / language_embedding.norm(dim=1, keepdim=True)
-
-        # cosine similarity as logits
-        logit_scale = self.logit_scale.exp()
-        logits_per_trajectory = logit_scale * trajectory_features @ language_features.t()
-        logits_per_description = logits_per_trajectory.t()
-
-        # shape = [global_batch_size, global_batch_size]
-        return logits_per_trajectory, logits_per_description
+        return trajectory_embedding, language_embedding
 
 
 class ContrastiveTraining(L.LightningModule):
@@ -56,6 +46,7 @@ class ContrastiveTraining(L.LightningModule):
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.steps = steps
+        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
     def training_step(self, batch, batch_idx):
         """
@@ -63,14 +54,31 @@ class ContrastiveTraining(L.LightningModule):
         language_tokens: torch.Tensor - A batch of language tokens of shape (B, N, T_D).
         actions: torch.Tensor - A batch of actions of shape (B, T, A_D). 
         """   
-        trajectory_similarity, description_similarity = self.model(**batch)
+        trajectory_embedding, language_embedding = self.model(**batch)
 
-        batch_size = trajectory_similarity.size(0)
-        labels = torch.arange(batch_size, device=trajectory_similarity.device)
+        # normalized features
+        trajectory_features = trajectory_embedding / trajectory_embedding.norm(dim=1, keepdim=True)
+        language_features = language_embedding / language_embedding.norm(dim=1, keepdim=True)
+
+        self.log("local_batch_size", language_features.size(0))
+
+        # Gather features from all GPUs
+        trajectory_features = self.all_gather(trajectory_features, sync_grads=True)
+        language_features = self.all_gather(language_features, sync_grads=True)
+
+        self.log("global_batch_size", language_features.size(0))
+
+        # cosine similarity as logits
+        logit_scale = self.logit_scale.exp()
+        logits_per_trajectory = logit_scale * trajectory_features @ language_features.t()
+        logits_per_description = logits_per_trajectory.t()                                      # shape = [global_batch_size, global_batch_size]
+
+        batch_size = logits_per_trajectory.size(0)
+        labels = torch.arange(batch_size, device=logits_per_trajectory.device)
 
         loss = (
-                torch.nn.functional.cross_entropy(trajectory_similarity, labels) +
-                torch.nn.functional.cross_entropy(description_similarity, labels)
+                torch.nn.functional.cross_entropy(logits_per_trajectory, labels) +
+                torch.nn.functional.cross_entropy(logits_per_description, labels)
                ) / 2
 
         self.log("train_loss", loss)
