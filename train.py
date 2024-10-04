@@ -4,7 +4,7 @@ import hydra
 from torch.utils.data import DataLoader, random_split
 from lightning import Trainer
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import LearningRateMonitor
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch import seed_everything
 from transformers import AutoTokenizer
 from omegaconf import open_dict
@@ -37,19 +37,18 @@ def train(config):
         val_dataloader = DataLoader(validation_set, 
                    batch_size=config.dataloader.batch_size, 
                    num_workers=0,
-                   collate_fn=collator,  
-                   drop_last=True)
+                   collate_fn=collator)
 
     train_dataloader = DataLoader(training_set, 
                    batch_size=config.dataloader.batch_size, 
                    num_workers=0,
-                   collate_fn=collator, 
-                   drop_last=True)
+                   collate_fn=collator)
     
     logger = WandbLogger(**config.logger)
     lr_monitor = LearningRateMonitor(logging_interval='step')
+    checkpoint_callback = ModelCheckpoint(every_n_epochs=1)
 
-    trainer = Trainer(logger=logger, callbacks=[lr_monitor], **config.trainer)
+    trainer = Trainer(logger=logger, callbacks=[lr_monitor, checkpoint_callback], **config.trainer)
     trainer.fit(lightning_model, train_dataloader, val_dataloader) if config.dataloader.validate else trainer.fit(lightning_model, train_dataloader)
 
 if __name__ == "__main__":
