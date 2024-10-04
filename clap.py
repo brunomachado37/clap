@@ -66,6 +66,10 @@ class ContrastiveTraining(L.LightningModule):
         trajectory_features = self.all_gather(trajectory_features, sync_grads=True)
         language_features = self.all_gather(language_features, sync_grads=True)
 
+        # Concatenate features from all GPUs into batch dimension
+        trajectory_features = trajectory_features.view(-1, trajectory_features.size(-1))
+        language_features = language_features.view(-1, language_features.size(-1))
+
         self.log("global_batch_size", language_features.size(0))
 
         # cosine similarity as logits
