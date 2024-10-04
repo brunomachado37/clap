@@ -24,7 +24,9 @@ def train(config):
         config.model.language_encoder.eos_token_id = tokenizer.eos_token_id
 
     model = Clap(**config.model)
-    lightning_model = ContrastiveTraining(model, epochs=config.trainer.max_epochs, **config.training)
+
+    max_num_steps = (len(training_set) // config.dataloader.batch_size) * config.trainer.max_epochs
+    lightning_model = ContrastiveTraining(model, steps=max_num_steps, **config.training)
 
     if config.dataloader.validate:
         validation_set_size = int(len(training_set) * config.dataloader.validation_percentage)
@@ -36,13 +38,13 @@ def train(config):
                    batch_size=config.dataloader.batch_size, 
                    num_workers=0,
                    collate_fn=collator,  
-                   drop_last=False)
+                   drop_last=True)
 
     train_dataloader = DataLoader(training_set, 
                    batch_size=config.dataloader.batch_size, 
                    num_workers=0,
                    collate_fn=collator, 
-                   drop_last=False)
+                   drop_last=True)
     
     logger = WandbLogger(**config.logger)
     lr_monitor = LearningRateMonitor(logging_interval='step')
