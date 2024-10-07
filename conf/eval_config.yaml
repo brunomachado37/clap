@@ -1,0 +1,18 @@
+checkpoint_path: "runs/CLAP/8djp1g5q/checkpoints/epoch=30-step=61287.ckpt"
+model:
+  action_encoder:
+    action_dim: 7
+    hidden_dim: 512
+    num_heads: 8
+    num_layers: 8
+    dropout_rate: 0.1
+    projection_dim: 768
+    max_sequence_length: 1024
+  language_encoder:
+    model_name: "openai/clip-vit-large-patch14"
+data:
+  data_root_dir: "/home/bmachado/Documents/Experiments/Datasets/DROID"
+  data_mix: "droid"
+  shuffle_buffer_size: 8192
+  episodic: True
+  action_model_max_length: ${model.action_encoder.max_sequence_length}
