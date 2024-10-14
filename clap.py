@@ -60,22 +60,21 @@ class ContrastiveTraining(L.LightningModule):
         trajectory_features = trajectory_embedding / trajectory_embedding.norm(dim=1, keepdim=True)
         language_features = language_embedding / language_embedding.norm(dim=1, keepdim=True)
 
-        self.log("local_batch_size", language_features.size(0))
-
         # Gather features from all GPUs
-        trajectory_features = self.all_gather(trajectory_features, sync_grads=True)
-        language_features = self.all_gather(language_features, sync_grads=True)
+        all_trajectory_features = self.all_gather(trajectory_features, sync_grads=True)
+        all_language_features = self.all_gather(language_features, sync_grads=True)
 
         # Concatenate features from all GPUs into batch dimension
-        trajectory_features = trajectory_features.view(-1, trajectory_features.size(-1))
-        language_features = language_features.view(-1, language_features.size(-1))
+        all_trajectory_features = trajectory_features.view(-1, trajectory_features.size(-1))
+        all_language_features = language_features.view(-1, language_features.size(-1))
 
-        self.log("global_batch_size", language_features.size(0))
+        self.log("local_batch_size", language_features.size(0))
+        self.log("global_batch_size", all_language_features.size(0))
 
         # cosine similarity as logits
         logit_scale = self.logit_scale.exp()
-        logits_per_trajectory = logit_scale * trajectory_features @ language_features.t()
-        logits_per_description = logits_per_trajectory.t()                                      # shape = [global_batch_size, global_batch_size]
+        logits_per_trajectory = logit_scale * trajectory_features @ all_language_features.t()  
+        logits_per_description = logit_scale * language_features @ all_trajectory_features.t() 
 
         batch_size = logits_per_trajectory.size(0)
         labels = torch.arange(batch_size, device=logits_per_trajectory.device)
