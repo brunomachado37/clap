@@ -17,6 +17,11 @@ from data.materialize import get_dataset_and_collator_tfds
 def train(config):
     seed_everything(42, workers=True)
 
+    if any(gpu in torch.torch.cuda.get_device_name() for gpu in ['A100', 'H100']):
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.set_float32_matmul_precision('high')
+
     tokenizer = AutoTokenizer.from_pretrained(config.model.language_encoder.model_name)
     training_set, collator = get_dataset_and_collator_tfds(**config.data, tokenizer=tokenizer)
 
