@@ -65,8 +65,8 @@ class ContrastiveTraining(L.LightningModule):
         all_language_features = self.all_gather(language_features, sync_grads=True)
 
         # Concatenate features from all GPUs into batch dimension
-        all_trajectory_features = trajectory_features.view(-1, trajectory_features.size(-1))
-        all_language_features = language_features.view(-1, language_features.size(-1))
+        all_trajectory_features = all_trajectory_features.view(-1, all_trajectory_features.size(-1))
+        all_language_features = all_language_features.view(-1, all_language_features.size(-1))
 
         self.log("local_batch_size", language_features.size(0))
         self.log("global_batch_size", all_language_features.size(0))
