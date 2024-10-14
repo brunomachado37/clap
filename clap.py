@@ -77,7 +77,7 @@ class ContrastiveTraining(L.LightningModule):
         logits_per_description = logit_scale * language_features @ all_trajectory_features.t() 
 
         batch_size = logits_per_trajectory.size(0)
-        labels = torch.arange(batch_size, device=logits_per_trajectory.device)
+        labels = torch.arange(batch_size, device=logits_per_trajectory.device) + self.global_rank * batch_size
 
         loss = (
                 torch.nn.functional.cross_entropy(logits_per_trajectory, labels) +
