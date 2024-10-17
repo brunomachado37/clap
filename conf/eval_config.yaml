@@ -1,4 +1,5 @@
-checkpoint_path: "runs/CLAP/8djp1g5q/checkpoints/epoch=30-step=61287.ckpt"
+checkpoint_path: "runs/CLAP/7j5wis3d/checkpoints/epoch=31-step=19008.ckpt"
+save_path: "encoded_data/7j5wis3d"
 model:
   action_encoder:
     action_dim: 7
@@ -13,6 +14,7 @@ model:
 data:
   data_root_dir: "/home/bmachado/Documents/Experiments/Datasets/DROID"
   data_mix: "droid"
+  train: False
   shuffle_buffer_size: 8192
   episodic: True
   action_model_max_length: ${model.action_encoder.max_sequence_length}
