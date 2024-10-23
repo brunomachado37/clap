@@ -1,5 +1,7 @@
 name: libero
 
+workers: 8
+
 dataset:
   data_root_dir: "/home/bmachado/Documents/Experiments/Datasets/LIBERO/libero/datasets/"
   benchmark_name: LIBERO_90

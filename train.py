@@ -46,7 +46,7 @@ def train(config):
 
     train_dataloader = DataLoader(training_set, 
                    batch_size=config.dataloader.batch_size, 
-                   num_workers=0,
+                   num_workers=config.data.workers,
                    collate_fn=collator)
     
     logger = WandbLogger(**config.logger)

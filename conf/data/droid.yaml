@@ -1,5 +1,7 @@
 name: rlds
 
+workers: 0
+
 dataset:
   data_root_dir: "/home/bmachado/Documents/Experiments/Datasets/DROID"
   data_mix: "droid"
