@@ -54,7 +54,15 @@ def train(config):
     checkpoint_callback = ModelCheckpoint(every_n_epochs=1)
 
     trainer = Trainer(logger=logger, callbacks=[lr_monitor, checkpoint_callback], **config.trainer)
-    trainer.fit(lightning_model, train_dataloader, val_dataloader) if config.dataloader.validate else trainer.fit(lightning_model, train_dataloader)
+
+    fit_args = {'model': lightning_model, 'train_dataloaders': train_dataloader}
+
+    if config.dataloader.validate:
+        fit_args['val_dataloaders'] = val_dataloader
+    if config.resume_training:
+        fit_args['ckpt_path'] = config.checkpoint_path
+
+    trainer.fit(**fit_args)
 
 if __name__ == "__main__":
     train()
