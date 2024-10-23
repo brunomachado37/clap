@@ -1,0 +1,8 @@
+name: rlds
+
+dataset:
+  data_root_dir: "/home/bmachado/Documents/Experiments/Datasets/DROID"
+  data_mix: "droid"
+  shuffle_buffer_size: 8192
+  episodic: True
+  action_model_max_length: ${model.action_encoder.max_sequence_length}

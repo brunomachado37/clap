@@ -1,0 +1,10 @@
+name: libero
+
+dataset:
+  data_root_dir: "/home/bmachado/Documents/Experiments/Datasets/LIBERO/libero/datasets/"
+  benchmark_name: LIBERO_90
+  n_demos: 50
+  padding_side: right
+  action_dim: ${model.action_encoder.action_dim}
+  lang_dim: ${model.action_encoder.projection_dim}
+  action_model_max_length: ${model.action_encoder.max_sequence_length}

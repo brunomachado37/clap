@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 from omegaconf import open_dict
 
 from clap import Clap, ContrastiveTraining
-from data.materialize import get_dataset_and_collator_tfds
+from data.materialize import get_dataset_and_collator
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="train_config")
@@ -23,7 +23,7 @@ def train(config):
         torch.set_float32_matmul_precision('high')
 
     tokenizer = AutoTokenizer.from_pretrained(config.model.language_encoder.model_name)
-    training_set, collator = get_dataset_and_collator_tfds(**config.data, tokenizer=tokenizer)
+    training_set, collator = get_dataset_and_collator(config.data.name, **config.data.dataset, tokenizer=tokenizer)
 
     with open_dict(config):
         config.model.language_encoder.eos_token_id = tokenizer.eos_token_id
