@@ -30,8 +30,8 @@ def train(config):
 
     model = Clap(**config.model)
 
-    max_num_steps = (len(training_set) // config.dataloader.batch_size) * config.trainer.max_epochs
-    lightning_model = ContrastiveTraining(model, steps=max_num_steps, **config.training)
+    max_num_steps = (len(training_set) // (config.dataloader.batch_size * torch.cuda.device_count())) * config.trainer.max_epochs
+    lightning_model = ContrastiveTraining(model, scheduler_max_steps=max_num_steps, **config.training)
 
     if config.dataloader.validate:
         validation_set_size = int(len(training_set) * config.dataloader.validation_percentage)

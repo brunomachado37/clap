@@ -37,7 +37,7 @@ class ContrastiveTraining(L.LightningModule):
                  model: nn.Module, 
                  learning_rate: float = 1e-3, 
                  weight_decay: float = 0.01,
-                 steps: int = 200_000,
+                 scheduler_max_steps: int = 200_000,
                 ):
         super().__init__()
         self.save_hyperparameters(ignore="model")
@@ -45,7 +45,7 @@ class ContrastiveTraining(L.LightningModule):
         self.model = model
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
-        self.steps = steps
+        self.steps = scheduler_max_steps
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
     def training_step(self, batch, batch_idx):
